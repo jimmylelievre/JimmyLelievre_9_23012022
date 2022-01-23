@@ -1,33 +1,39 @@
 import VerticalLayout from "./VerticalLayout.js";
 import ErrorPage from "./ErrorPage.js";
 import LoadingPage from "./LoadingPage.js";
-
+import { formatDate } from "../app/format.js";
 import Actions from "./Actions.js";
 
-const row = (bill) => {
-  console.log(bill.date);
+const row = (bill, options) => {
   return `
     <tr>
       <td>${bill.type}</td>
       <td>${bill.name}</td>
-      <td>${bill.date}</td>
+      <td>${options.formatDate ? formatDate(bill.date) : bill.date}</td>
       <td>${bill.amount} €</td>
       <td>${bill.status}</td>
       <td>
-        ${Actions(bill.fileUrl)}
+        ${Actions(bill.fileUrl, bill.fileName)}
       </td>
     </tr>
     `;
 };
 
-const rows = (data) => {
-  console.log(data);
-  return data && data.length ? data.map((bill) => row(bill)).join("") : "";
+const rows = (data, options) => {
+  if (data && data.length) {
+    const dataSorted = data.sort((a, b) =>
+      new Date(a.date) < new Date(b.date) ? 1 : -1
+    ); // Order by date
+    return dataSorted.map((bill) => row(bill, options)).join("");
+  } else return "";
 };
 
-export default ({ data: bills, loading, error }) => {
+export default (
+  { data: bills, loading, error },
+  options = { formatDate: true }
+) => {
   const modal = () => `
-    <div class="modal fade" id="modaleFile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal fade" id="modaleFile" data-testid="modaleFile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -70,7 +76,7 @@ export default ({ data: bills, loading, error }) => {
               </tr>
           </thead>
           <tbody data-testid="tbody">
-            ${rows(bills)}
+            ${rows(bills, options)}
           </tbody>
           </table>
         </div>
