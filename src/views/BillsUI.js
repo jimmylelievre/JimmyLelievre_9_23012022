@@ -5,6 +5,7 @@ import { formatDate } from "../app/format.js";
 import Actions from "./Actions.js";
 
 const row = (bill, options) => {
+  console.log(bill.fileUrl);
   return `
     <tr>
       <td>${bill.type}</td>
@@ -20,6 +21,7 @@ const row = (bill, options) => {
 };
 
 const rows = (data, options) => {
+  console.log(data);
   if (data && data.length) {
     const dataSorted = data.sort((a, b) =>
       new Date(a.date) < new Date(b.date) ? 1 : -1
