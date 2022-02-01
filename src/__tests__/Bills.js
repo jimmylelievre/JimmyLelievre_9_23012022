@@ -77,6 +77,8 @@ describe("Given I am connected as an employee", () => {
 
   describe("When i click on the icon eye", () => {
     test("Then i should see a modal open", () => {
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
       billsList = new Bills({
         document,
         onNavigate: (pathname) =>
@@ -84,12 +86,12 @@ describe("Given I am connected as an employee", () => {
         Store: null,
         localStorage: window.localStorage,
       });
-      const eye = screen.queryByTestId("icon-eye");
+      const eye = screen.getAllByTestId("icon-eye")[0];
       const handleClickIconEye = jest.fn(billsList.handleClickIconEye(eye));
       eye.addEventListener("click", handleClickIconEye);
       fireEvent.click(eye);
       expect(handleClickIconEye).toHaveBeenCalled();
-      expect(screen.queryByTestId("modaleFile")).toBeTruthy();
+      expect(screen.getByTestId("modaleFile")).toBeTruthy();
     });
   });
 
@@ -97,8 +99,10 @@ describe("Given I am connected as an employee", () => {
 
   describe("the New Bill button", () => {
     test("Then it should display the New Bill Page", () => {
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
       const handleClickNewBill = jest.fn(billsList.handleClickNewBill);
-      const buttonNewBill = screen.queryByTestId("btn-new-bill");
+      const buttonNewBill = screen.getByTestId("btn-new-bill");
       expect(buttonNewBill).toBeTruthy();
       buttonNewBill.addEventListener("click", handleClickNewBill);
       fireEvent.click(buttonNewBill);

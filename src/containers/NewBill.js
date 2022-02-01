@@ -28,25 +28,28 @@ export default class NewBill {
     formData.append("file", file);
     formData.append("email", email);
 
-    const regexFileAccepted = new RegExp("^.*.(jpg|jpeg|gif|png|pdf)$", "i");
+    const regexFileAccepted = new RegExp("^.*.(jpg|jpeg|gif|png)$", "i");
+    console.log(regexFileAccepted.test(file.name));
     if (!regexFileAccepted.test(file.name)) return false;
-    console.log(file.name);
-
-    this.store
-      .bills()
-      .create({
-        data: formData,
-        headers: {
-          noContentType: true,
-        },
-      })
-      .then(({ fileUrl, key }) => {
-        console.log(fileUrl);
-        this.billId = key;
-        this.fileUrl = fileUrl;
-        this.fileName = fileName;
-      })
-      .catch((error) => console.error(error));
+    if (this.store)
+      this.store
+        .ref(`justificatifs/${fileName}`)
+        .put(file)
+        .then((snapshot) => snapshot.ref.getDownloadURL())
+        .bills()
+        .create({
+          data: formData,
+          headers: {
+            noContentType: true,
+          },
+        })
+        .then(({ fileUrl, key }) => {
+          console.log(fileUrl);
+          this.billId = key;
+          this.fileUrl = fileUrl;
+          this.fileName = fileName;
+        })
+        .catch((error) => console.error(error));
   };
   handleSubmit = (e) => {
     e.preventDefault();
