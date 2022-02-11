@@ -29,7 +29,7 @@ export default class NewBill {
     formData.append("email", email);
 
     const regexFileAccepted = new RegExp("^.*.(jpg|jpeg|gif|png)$", "i");
-    console.log(regexFileAccepted.test(file.name));
+
     if (!regexFileAccepted.test(file.name)) return false;
     if (this.store)
       this.store
@@ -44,7 +44,6 @@ export default class NewBill {
           },
         })
         .then(({ fileUrl, key }) => {
-          console.log(fileUrl);
           this.billId = key;
           this.fileUrl = fileUrl;
           this.fileName = fileName;

@@ -79,6 +79,7 @@ describe("Given I am connected as an employee", () => {
     test("Then i should see a modal open", () => {
       const html = BillsUI({ data: bills });
       document.body.innerHTML = html;
+      $.fn.modal = jest.fn();
       billsList = new Bills({
         document,
         onNavigate: (pathname) =>
