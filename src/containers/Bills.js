@@ -15,12 +15,12 @@ export default class {
     const iconEye = document.querySelectorAll(`div[data-testid="icon-eye"]`);
     if (iconEye)
       iconEye.forEach((icon) => {
-        icon.addEventListener("click", (e) => this.handleClickIconEye(icon));
+        icon.addEventListener("click", () => this.handleClickIconEye(icon));
       });
     new Logout({ document, localStorage, onNavigate });
   }
 
-  handleClickNewBill = (e) => {
+  handleClickNewBill = () => {
     this.onNavigate(ROUTES_PATH["NewBill"]);
   };
 
@@ -30,12 +30,11 @@ export default class {
     $("#modaleFile")
       .find(".modal-body")
       .html(
-        `<div style='text-align: center;' class="bill-proof-container"><img width=${imgWidth} src=${billUrl} /></div>`
+        `<div style='text-align: center;' class="bill-proof-container"><img width=${imgWidth} src=${billUrl} alt="Bill" /></div>`
       );
     $("#modaleFile").modal("show");
   };
 
-  // not need to cover this function by tests
   getBills = () => {
     if (this.store) {
       return this.store
@@ -60,7 +59,7 @@ export default class {
               };
             }
           });
-
+          console.log("length", bills.length);
           return bills;
         });
     }

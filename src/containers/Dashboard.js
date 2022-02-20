@@ -4,7 +4,6 @@ import BigBilledIcon from "../assets/svg/big_billed.js";
 import { ROUTES_PATH } from "../constants/routes.js";
 import USERS_TEST from "../constants/usersTest.js";
 import Logout from "./Logout.js";
-import arrow from "../assets/svg/arrow.js";
 
 export const filteredBills = (data, status) => {
   return data && data.length
@@ -15,6 +14,7 @@ export const filteredBills = (data, status) => {
         if (typeof jest !== "undefined") {
           selectCondition = bill.status === status;
         } else {
+          /* istanbul ignore next */
           // in prod environment
           const userEmail = JSON.parse(localStorage.getItem("user")).email;
           selectCondition =
@@ -76,34 +76,30 @@ export default class {
     this.document = document;
     this.onNavigate = onNavigate;
     this.store = store;
-    this.billsStatusState = {
-      1: false,
-      2: false,
-      3: false,
+    this.listStatusState = {
+      isOpen1: false,
+      isOpen2: false,
+      isOpen3: false,
     };
     $("#arrow-icon1").click((e) => this.handleShowTickets(e, bills, 1));
     $("#arrow-icon2").click((e) => this.handleShowTickets(e, bills, 2));
     $("#arrow-icon3").click((e) => this.handleShowTickets(e, bills, 3));
-    this.getBillsAllUsers();
     new Logout({ localStorage, onNavigate });
   }
 
   handleClickIconEye = () => {
     const billUrl = $("#icon-eye-d").attr("data-bill-url");
-    const imgWidth = Math.floor($("#modaleFileAdmin1").width() * 0.8);
+    const imgWidth = "100%"; //Math.floor($("#modaleFileAdmin1").width() * 0.8);
     $("#modaleFileAdmin1")
       .find(".modal-body")
       .html(
-        `<div style='text-align: center;'><img width=${imgWidth} src=${billUrl} /></div>`
+        `<div style='text-align: center;'><img width=${imgWidth} src=${billUrl} alt="Bill"/></div>`
       );
     if (typeof $("#modaleFileAdmin1").modal === "function")
       $("#modaleFileAdmin1").modal("show");
   };
 
   handleEditTicket(e, bill, bills) {
-    this.counter = 0;
-
-    console.log(this.counter);
     if (this.counter === undefined || this.id !== bill.id) this.counter = 0;
     if (this.id === undefined || this.id !== bill.id) this.id = bill.id;
     if (this.counter % 2 === 0) {
@@ -118,7 +114,7 @@ export default class {
       $(`#open-bill${bill.id}`).css({ background: "#0D5AE5" });
 
       $(".dashboard-right-container div").html(`
-        <div id="big-billed-icon"> ${BigBilledIcon} </div>
+        <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
       `);
       $(".vertical-navbar").css({ height: "120vh" });
       this.counter++;
@@ -149,31 +145,49 @@ export default class {
   };
 
   handleShowTickets(e, bills, index) {
-    this.billsStatusState[index] = !this.billsStatusState[index]; // Toggle
-    this.index = index;
-    const elArrow = document.getElementById("arrow-icon" + index);
-    const elContainer = document.getElementById(
-      "status-bills-container" + index
-    );
-    if (this.billsStatusState[index]) {
-      // Show bills
-      elArrow.style.transform = "rotate(0deg)";
-      elContainer.innerHTML = cards(filteredBills(bills, getStatus(index)));
+    if (this.index === undefined || this.index !== index) this.index = index;
+
+    // if the list is open, its status changes to 'true' and we execute the code
+    if (this.listStatusState[`isOpen${index}`]) {
+      $(`#arrow-icon${this.index}`).css({
+        transform: "rotate(0deg)",
+      });
+      $(`#status-bills-container${this.index}`).html("");
+      this.listStatusState[`isOpen${index}`] = false;
     } else {
-      // Hide Bills
-      elArrow.style.transform = "rotate(90deg)";
-      elContainer.innerHTML = "";
+      $(`#arrow-icon${this.index}`).css({
+        transform: "rotate(90deg)",
+      });
+      $(`#status-bills-container${this.index}`).html(
+        cards(filteredBills(bills, getStatus(this.index)))
+      );
+      this.listStatusState[`isOpen${index}`] = true;
     }
 
     bills.forEach((bill) => {
-      $(`#open-bill${bill.id}`).click((e) =>
+      $(`#open-bill${bill.id}`).off("click");
+      $(`#open-bill${bill.id}`).on("click", (e) =>
         this.handleEditTicket(e, bill, bills)
       );
     });
+
+    // if none of the lists is open, the big icon appears on the right
+    if (
+      !this.listStatusState.isOpen1 &&
+      !this.listStatusState.isOpen2 &&
+      !this.listStatusState.isOpen3
+    ) {
+      $(".dashboard-right-container div").html(`
+        <div id='big-billed-icon'> ${BigBilledIcon} </div>
+      `);
+      $(".vertical-navbar").css({
+        height: "120vh",
+      });
+    }
+
     return bills;
   }
 
-  // not need to cover this function by tests
   getBillsAllUsers = () => {
     if (this.store) {
       return this.store
@@ -188,11 +202,14 @@ export default class {
           }));
           return bills;
         })
-        .catch(console.log);
+        .catch((error) => {
+          throw error;
+        });
     }
   };
 
   // not need to cover this function by tests
+  /* istanbul ignore next */
   updateBill = (bill) => {
     if (this.store) {
       return this.store

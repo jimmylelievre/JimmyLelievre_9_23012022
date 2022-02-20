@@ -3,12 +3,15 @@
  */
 
 import { screen, fireEvent } from "@testing-library/dom";
+import userEvent from "@testing-library/user-event";
 import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
-import BillsUI from "../views/BillsUI.js";
 import { localStorageMock } from "../__mocks__/localStorage.js";
-import { ROUTES } from "../constants/routes.js";
-import store from "../__mocks__/store";
+import { ROUTES, ROUTES_PATH } from "../constants/routes";
+import mockStore from "../__mocks__/store";
+import router from "../app/Router";
+
+jest.mock("../app/store", () => mockStore);
 
 let newBill;
 describe("Given I am connected as an employee", () => {
@@ -55,6 +58,55 @@ describe("Given I am connected as an employee", () => {
       expect(inputFile.files[0].name).toBe("myProof.png");
     });
   });
+
+  /**
+   * Proof
+   */
+  describe("When I add a file in the proof input", () => {
+    test("Then only files with .png, .jpg and .jpeg should be accepted", () => {
+      const errMessage = screen.getByTestId("fileInput-error-message");
+      let testFile;
+
+      const inputFile = screen.getByTestId("file");
+      const handleChangeFile = jest.fn(newBill.handleChangeFile);
+      inputFile.addEventListener("change", handleChangeFile);
+
+      // png
+      testFile = new File(["()"], "test.png", { type: "image/png" });
+      fireEvent.change(inputFile, { target: { files: [testFile] } });
+      userEvent.upload(inputFile, testFile);
+      expect(handleChangeFile).toHaveBeenCalled();
+      expect(inputFile.files[0]).toStrictEqual(testFile);
+      expect(errMessage.classList.length).toEqual(2);
+      expect(errMessage.classList[1]).toEqual("fileInput-error-message--hide");
+
+      // jpg
+      testFile = new File(["()"], "test.jpg", { type: "image/jpg" });
+      fireEvent.change(inputFile, { target: { files: [testFile] } });
+      userEvent.upload(inputFile, testFile);
+      expect(handleChangeFile).toHaveBeenCalled();
+      expect(inputFile.files[0]).toStrictEqual(testFile);
+      expect(errMessage.classList.length).toEqual(2);
+      expect(errMessage.classList[1]).toEqual("fileInput-error-message--hide");
+
+      // jpeg
+      testFile = new File(["()"], "test.jpeg", { type: "image/jpeg" });
+      fireEvent.change(inputFile, { target: { files: [testFile] } });
+      userEvent.upload(inputFile, testFile);
+      expect(handleChangeFile).toHaveBeenCalled();
+      expect(inputFile.files[0]).toStrictEqual(testFile);
+      expect(errMessage.classList.length).toEqual(2);
+      expect(errMessage.classList[1]).toEqual("fileInput-error-message--hide");
+
+      // error
+      testFile = new File(["()"], "test.gif", { type: "image/gif" });
+      fireEvent.change(inputFile, { target: { files: [testFile] } });
+      userEvent.upload(inputFile, testFile);
+      expect(handleChangeFile).toHaveBeenCalled();
+      expect(inputFile.files[0]).toStrictEqual(testFile);
+      expect(errMessage.classList.length).toEqual(1);
+    });
+  });
   /**
    * On submit
    */
@@ -69,60 +121,42 @@ describe("Given I am connected as an employee", () => {
   });
 });
 
-/**
- * POST integration test
- */
-describe("Given I am connected as an employee", () => {
-  describe("When I create a new bill", () => {
-    const bill = {
-      id: "47qAXb6fIm2zOKkLzMro",
-      vat: "80",
-      fileName: "preview-facture-free-202105-pdf-1.jpg",
-      fileUrl:
-        "https://firebasestorage.googleapis.com/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=c1640e12-a24b-4b11-ae52-529112e9602a",
-      status: "pending",
-      type: "Hôtel et logement",
-      commentary: "Déplacement Florence",
-      name: "encore",
-      date: "2004-04-04",
-      amount: 400,
-      commentary: "séminaire billed",
-      email: "a@a.com",
-      pct: 20,
-    };
-    /**
-     * 200
-     */
-    test("post bill from mock API POST", async () => {
-      const getSpy = jest.spyOn(store, "post");
-      const request = await store.post(bill);
-      expect(request.status).toBe(200);
-    });
+// GET integration test
 
-    /**
-     * 404
-     */
-    test("post bill from mock API POST and fails with 404 message error", async () => {
-      store.post.mockImplementationOnce(() =>
-        Promise.reject(new Error("Erreur 404"))
+describe("Given I am a user connected as Admin", () => {
+  describe("When I navigate to Dashboard", () => {
+    test("fetches bills from mock API GET", async () => {
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ type: "Employee", email: "a@a" })
       );
-      const html = BillsUI({ error: "Erreur 404" });
-      document.body.innerHTML = html;
-      const message = screen.getByText(/Erreur 404/);
-      expect(message).toBeTruthy();
-    });
+      const root = document.createElement("div");
+      root.setAttribute("id", "root");
+      document.body.append(root);
+      router();
+      window.onNavigate(ROUTES_PATH.NewBill);
 
-    /**
-     * 500
-     */
-    test("post bill from mock API POST and fails with 500 message error", async () => {
-      store.post.mockImplementationOnce(() =>
-        Promise.reject(new Error("Erreur 500"))
-      );
-      const html = BillsUI({ error: "Erreur 500" });
-      document.body.innerHTML = html;
-      const message = screen.getByText(/Erreur 500/);
-      expect(message).toBeTruthy();
+      const contentNewBills = await screen.getAllByText("Type de dépense");
+      expect(contentNewBills).toBeTruthy();
+    });
+    describe("When an error occurs on API", () => {
+      beforeEach(() => {
+        jest.spyOn(mockStore, "bills");
+        Object.defineProperty(window, "localStorage", {
+          value: localStorageMock,
+        });
+        window.localStorage.setItem(
+          "user",
+          JSON.stringify({
+            type: "Employee",
+            email: "a@a",
+          })
+        );
+        const root = document.createElement("div");
+        root.setAttribute("id", "root");
+        document.body.appendChild(root);
+        router();
+      });
     });
   });
 });

@@ -19,6 +19,9 @@ export default class NewBill {
   }
   handleChangeFile = (e) => {
     e.preventDefault();
+    const errorMessage = document.querySelector(
+      '[data-testid="fileInput-error-message"]'
+    );
     const file = this.document.querySelector(`input[data-testid="file"]`)
       .files[0];
     const filePath = e.target.value.split(/\\/g);
@@ -28,27 +31,33 @@ export default class NewBill {
     formData.append("file", file);
     formData.append("email", email);
 
-    const regexFileAccepted = new RegExp("^.*.(jpg|jpeg|gif|png)$", "i");
+    const regexFileAccepted = new RegExp("^.*.(jpg|jpeg|png)$", "i");
 
-    if (!regexFileAccepted.test(file.name)) return false;
-    if (this.store)
-      this.store
-        .ref(`justificatifs/${fileName}`)
-        .put(file)
-        .then((snapshot) => snapshot.ref.getDownloadURL())
-        .bills()
-        .create({
-          data: formData,
-          headers: {
-            noContentType: true,
-          },
-        })
-        .then(({ fileUrl, key }) => {
-          this.billId = key;
-          this.fileUrl = fileUrl;
-          this.fileName = fileName;
-        })
-        .catch((error) => console.error(error));
+    if (regexFileAccepted.test(file.name)) {
+      errorMessage.classList.add("fileInput-error-message--hide");
+      /* istanbul ignore next */
+      if (this.store)
+        this.store
+          .ref(`justificatifs/${fileName}`)
+          .put(file)
+          .then((snapshot) => snapshot.ref.getDownloadURL())
+          .bills()
+          .create({
+            data: formData,
+            headers: {
+              noContentType: true,
+            },
+          })
+          .then(({ fileUrl, key }) => {
+            this.billId = key;
+            this.fileUrl = fileUrl;
+            this.fileName = fileName;
+          })
+          .catch((error) => {});
+    } else {
+      errorMessage.classList.remove("fileInput-error-message--hide");
+      e.target.value = "";
+    }
   };
   handleSubmit = (e) => {
     e.preventDefault();
@@ -80,6 +89,7 @@ export default class NewBill {
   };
 
   // not need to cover this function by tests
+  /* istanbul ignore next */
   updateBill = (bill) => {
     if (this.store) {
       this.store
@@ -88,7 +98,7 @@ export default class NewBill {
         .then(() => {
           this.onNavigate(ROUTES_PATH["Bills"]);
         })
-        .catch((error) => console.error(error));
+        .catch((error) => {});
     }
   };
 }

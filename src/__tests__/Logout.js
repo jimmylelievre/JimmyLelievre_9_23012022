@@ -26,7 +26,6 @@ const bills = [
     commentAdmin: "ok",
     email: "a@a",
     pct: 20,
-    email: "john.snow@billed.com",
   },
 ];
 
