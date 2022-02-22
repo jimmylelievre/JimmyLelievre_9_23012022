@@ -16,10 +16,20 @@ jest.mock("../app/store", () => mockStore);
 describe("Given I am connected as an employee", () => {
   describe("When I am on Bills Page", () => {
     test("Then bill icon in vertical layout should be highlighted", () => {
-      const html = BillsUI({ data: [] });
-      document.body.innerHTML = html;
-      //to-do write expect expression
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      }); // mock localStorage
+      window.localStorage.setItem("user", JSON.stringify({ type: "Employee" })); // Set user as Employee in localStorage
+      Object.defineProperty(window, "location", {
+        value: { hash: ROUTES_PATH["Bills"] },
+      }); // Set location
+      document.body.innerHTML = `<div id="root"></div>`;
+      router();
+      expect(
+        screen.getByTestId("icon-window").classList.contains("active-icon")
+      ).toBe(true);
     });
+
     test("Then bills should be ordered from earliest to latest", () => {
       const html = BillsUI({ data: bills }, { formatDate: false });
       document.body.innerHTML = html;
@@ -90,6 +100,7 @@ describe("Given I am connected as an employee", () => {
         store: null,
         localStorage: window.localStorage,
       });
+
       const eye = screen.getAllByTestId("icon-eye")[0];
       const handleClickIconEye = jest.fn(billsList.handleClickIconEye(eye));
       eye.addEventListener("click", handleClickIconEye);
